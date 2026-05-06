@@ -165,6 +165,8 @@ function createMockAppContext(
 		orgPreferences: createMockOrgPreferences(),
 		userPreferences: [],
 		isLoggedIn: true,
+		isNoAuthMode: false,
+		isPreflightLoading: false,
 		org: [{ createdAt: 0, id: 'org-id', displayName: 'Test Org' }],
 		isFetchingUser: false,
 		isFetchingActiveLicense: false,

@@ -18,6 +18,8 @@ export interface IAppContext {
 	orgPreferences: OrgPreference[] | null;
 	userPreferences: UserPreference[] | null;
 	isLoggedIn: boolean;
+	isNoAuthMode: boolean;
+	isPreflightLoading: boolean;
 	org: Organization[] | null;
 	isFetchingUser: boolean;
 	isFetchingActiveLicense: boolean;
