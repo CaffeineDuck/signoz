@@ -9,6 +9,7 @@ import EditMemberDrawer from 'components/EditMemberDrawer/EditMemberDrawer';
 import InviteMembersModal from 'components/InviteMembersModal/InviteMembersModal';
 import MembersTable, { MemberRow } from 'components/MembersTable/MembersTable';
 import useUrlQuery from 'hooks/useUrlQuery';
+import { useAppContext } from 'providers/App/App';
 import { toISOString } from 'utils/app';
 
 import { FilterMode, MemberStatus, toMemberStatus } from './utils';
@@ -20,6 +21,7 @@ const PAGE_SIZE = 20;
 function MembersSettings(): JSX.Element {
 	const history = useHistory();
 	const urlQuery = useUrlQuery();
+	const { isNoAuthMode } = useAppContext();
 
 	const pageParam = parseInt(urlQuery.get('page') ?? '1', 10);
 	const currentPage = Number.isNaN(pageParam) || pageParam < 1 ? 1 : pageParam;
@@ -145,7 +147,7 @@ function MembersSettings(): JSX.Element {
 				: `Deleted ⎯ ${deletedCount}`;
 
 	const handleInviteComplete = useCallback((): void => {
-		refetchUsers();
+		void refetchUsers();
 	}, [refetchUsers]);
 
 	const handleRowClick = useCallback((member: MemberRow): void => {
@@ -157,7 +159,7 @@ function MembersSettings(): JSX.Element {
 	}, []);
 
 	const handleMemberEditComplete = useCallback((): void => {
-		refetchUsers();
+		void refetchUsers();
 	}, [refetchUsers]);
 
 	return (
@@ -200,14 +202,16 @@ function MembersSettings(): JSX.Element {
 						/>
 					</div>
 
-					<Button
-						variant="solid"
-						color="primary"
-						onClick={(): void => setIsInviteModalOpen(true)}
-					>
-						<Plus size={12} />
-						Invite member
-					</Button>
+					{!isNoAuthMode && (
+						<Button
+							variant="solid"
+							color="primary"
+							onClick={(): void => setIsInviteModalOpen(true)}
+						>
+							<Plus size={12} />
+							Invite member
+						</Button>
+					)}
 				</div>
 			</div>
 			<MembersTable
@@ -221,11 +225,13 @@ function MembersSettings(): JSX.Element {
 				onRowClick={handleRowClick}
 			/>
 
-			<InviteMembersModal
-				open={isInviteModalOpen}
-				onClose={(): void => setIsInviteModalOpen(false)}
-				onComplete={handleInviteComplete}
-			/>
+			{!isNoAuthMode && (
+				<InviteMembersModal
+					open={isInviteModalOpen}
+					onClose={(): void => setIsInviteModalOpen(false)}
+					onComplete={handleInviteComplete}
+				/>
+			)}
 
 			<EditMemberDrawer
 				member={selectedMember}

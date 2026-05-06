@@ -28,6 +28,7 @@ export const getRoutes = (
 	isCloudUser: boolean,
 	isEnterpriseSelfHostedUser: boolean,
 	t: TFunction,
+	isNoAuthMode = false,
 ): RouteTabProps['routes'] => {
 	const settings = [];
 
@@ -37,7 +38,7 @@ export const getRoutes = (
 	if (isWorkspaceBlocked && isAdmin) {
 		settings.push(
 			...organizationSettings(t),
-			...membersSettings(t),
+			...(isNoAuthMode ? [] : membersSettings(t)),
 			...mySettings(t),
 			...billingSettings(t),
 			...keyboardShortcuts(t),
@@ -64,7 +65,7 @@ export const getRoutes = (
 
 	if (isAdmin) {
 		settings.push(
-			...membersSettings(t),
+			...(isNoAuthMode ? [] : membersSettings(t)),
 			...serviceAccountsSettings(t),
 			...rolesSettings(t),
 			...roleDetails(t),
