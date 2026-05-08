@@ -2,6 +2,8 @@ import { useCallback, useMemo } from 'react';
 import { KeyRound, X } from '@signozhq/icons';
 import { Button } from '@signozhq/ui';
 import { Skeleton, Table, Tooltip } from 'antd';
+import { DEFAULT_MESSAGE, NoAuthGuard } from 'components/NoAuthGuard';
+import { useAppContext } from 'providers/App/App';
 import type { ColumnsType } from 'antd/es/table/interface';
 import type { ServiceaccounttypesGettableFactorAPIKeyDTO } from 'api/generated/services/sigNoz.schemas';
 import { DATE_TIME_FORMATS } from 'constants/dateTimeFormats';
@@ -23,6 +25,7 @@ interface KeysTabProps {
 
 interface BuildColumnsParams {
 	isDisabled: boolean;
+	isNoAuthMode: boolean;
 	onRevokeClick: (keyId: string) => void;
 	handleformatLastObservedAt: (
 		lastObservedAt: Date | null | undefined,
@@ -42,6 +45,7 @@ function formatExpiry(expiresAt: number): JSX.Element {
 
 function buildColumns({
 	isDisabled,
+	isNoAuthMode,
 	onRevokeClick,
 	handleformatLastObservedAt,
 }: BuildColumnsParams): ColumnsType<ServiceaccounttypesGettableFactorAPIKeyDTO> {
@@ -92,23 +96,30 @@ function buildColumns({
 			key: 'action',
 			width: 48,
 			align: 'right' as const,
-			render: (_, record): JSX.Element => (
-				<Tooltip title={isDisabled ? 'Service account disabled' : 'Revoke Key'}>
-					<Button
-						variant="ghost"
-						size="sm"
-						color="destructive"
-						disabled={isDisabled}
-						onClick={(e): void => {
-							e.stopPropagation();
-							onRevokeClick(record.id);
-						}}
-						className="keys-tab__revoke-btn"
-					>
-						<X size={12} />
-					</Button>
-				</Tooltip>
-			),
+			render: (_, record): JSX.Element => {
+				const tooltipTitle = isDisabled
+					? 'Service account disabled'
+					: isNoAuthMode
+						? DEFAULT_MESSAGE
+						: 'Revoke Key';
+				return (
+					<Tooltip title={tooltipTitle}>
+						<Button
+							variant="ghost"
+							size="sm"
+							color="destructive"
+							disabled={isDisabled || isNoAuthMode}
+							onClick={(e): void => {
+								e.stopPropagation();
+								onRevokeClick(record.id);
+							}}
+							className="keys-tab__revoke-btn"
+						>
+							<X size={12} />
+						</Button>
+					</Tooltip>
+				);
+			},
 		},
 	];
 }
@@ -134,6 +145,7 @@ function KeysTab({
 		parseAsString.withDefault(''),
 	);
 	const editKey = keys.find((k) => k.id === editKeyId) ?? null;
+	const { isNoAuthMode } = useAppContext();
 
 	const handleformatLastObservedAt = useCallback(
 		(lastObservedAt: Date | null | undefined): string =>
@@ -149,8 +161,14 @@ function KeysTab({
 	);
 
 	const columns = useMemo(
-		() => buildColumns({ isDisabled, onRevokeClick, handleformatLastObservedAt }),
-		[isDisabled, onRevokeClick, handleformatLastObservedAt],
+		() =>
+			buildColumns({
+				isDisabled,
+				isNoAuthMode,
+				onRevokeClick,
+				handleformatLastObservedAt,
+			}),
+		[isDisabled, isNoAuthMode, onRevokeClick, handleformatLastObservedAt],
 	);
 
 	if (isLoading) {
@@ -176,16 +194,18 @@ function KeysTab({
 						Learn more
 					</a>
 				</p>
-				<Button
-					variant="link"
-					color="primary"
-					onClick={async (): Promise<void> => {
-						await setIsAddKeyOpen(true);
-					}}
-					disabled={isDisabled}
-				>
-					+ Add your first key
-				</Button>
+				<NoAuthGuard>
+					<Button
+						variant="link"
+						color="primary"
+						onClick={async (): Promise<void> => {
+							await setIsAddKeyOpen(true);
+						}}
+						disabled={isDisabled}
+					>
+						+ Add your first key
+					</Button>
+				</NoAuthGuard>
 			</div>
 		);
 	}

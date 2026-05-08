@@ -42,6 +42,7 @@ import {
 import APIError from 'types/api/error';
 import { retryOn429, toAPIError } from 'utils/errorUtils';
 
+import { NoAuthGuard } from 'components/NoAuthGuard';
 import AddKeyModal from './AddKeyModal';
 import DeleteAccountModal from './DeleteAccountModal';
 import KeysTab from './KeysTab';
@@ -410,18 +411,20 @@ function ServiceAccountDrawer({
 					</ToggleGroupItem>
 				</ToggleGroup>
 				{activeTab === ServiceAccountDrawerTab.Keys && (
-					<Button
-						variant="outlined"
-						size="sm"
-						color="secondary"
-						disabled={isDeleted}
-						onClick={(): void => {
-							void setIsAddKeyOpen(true);
-						}}
-					>
-						<Plus size={12} />
-						Add Key
-					</Button>
+					<NoAuthGuard>
+						<Button
+							variant="outlined"
+							size="sm"
+							color="secondary"
+							disabled={isDeleted}
+							onClick={(): void => {
+								void setIsAddKeyOpen(true);
+							}}
+						>
+							<Plus size={12} />
+							Add Key
+						</Button>
+					</NoAuthGuard>
 				)}
 			</div>
 
@@ -500,16 +503,18 @@ function ServiceAccountDrawer({
 			) : (
 				<>
 					{!isDeleted && (
-						<Button
-							variant="link"
-							color="destructive"
-							onClick={(): void => {
-								void setIsDeleteOpen(true);
-							}}
-						>
-							<Trash2 size={12} />
-							Delete Service Account
-						</Button>
+						<NoAuthGuard>
+							<Button
+								variant="link"
+								color="destructive"
+								onClick={(): void => {
+									void setIsDeleteOpen(true);
+								}}
+							>
+								<Trash2 size={12} />
+								Delete Service Account
+							</Button>
+						</NoAuthGuard>
 					)}
 					{!isDeleted && (
 						<div className="sa-drawer__footer-right">
@@ -517,15 +522,17 @@ function ServiceAccountDrawer({
 								<X size={14} />
 								Cancel
 							</Button>
-							<Button
-								variant="solid"
-								color="primary"
-								loading={isSaving}
-								disabled={!isDirty}
-								onClick={handleSave}
-							>
-								Save Changes
-							</Button>
+							<NoAuthGuard>
+								<Button
+									variant="solid"
+									color="primary"
+									loading={isSaving}
+									disabled={!isDirty}
+									onClick={handleSave}
+								>
+									Save Changes
+								</Button>
+							</NoAuthGuard>
 						</div>
 					)}
 				</>
