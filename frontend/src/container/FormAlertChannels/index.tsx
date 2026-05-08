@@ -1,7 +1,7 @@
 import { Dispatch, ReactElement, SetStateAction } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Form, FormInstance, Input, Select, Typography } from 'antd';
-import { Switch } from '@signozhq/ui';
+import { Form, FormInstance, Input, Select } from 'antd';
+import { Typography, Switch } from '@signozhq/ui';
 import type { Store } from 'antd/lib/form/interface';
 import ROUTES from 'constants/routes';
 import {

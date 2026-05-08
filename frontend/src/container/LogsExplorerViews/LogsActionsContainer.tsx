@@ -1,5 +1,4 @@
-import { Typography } from 'antd';
-import { Switch } from '@signozhq/ui';
+import { Typography, Switch } from '@signozhq/ui';
 import DownloadOptionsMenu from 'components/DownloadOptionsMenu/DownloadOptionsMenu';
 import LogsFormatOptionsMenu from 'components/LogsFormatOptionsMenu/LogsFormatOptionsMenu';
 import ListViewOrderBy from 'components/OrderBy/ListViewOrderBy';

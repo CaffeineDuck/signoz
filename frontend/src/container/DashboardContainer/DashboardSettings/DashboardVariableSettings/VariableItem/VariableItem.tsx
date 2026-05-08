@@ -5,8 +5,8 @@ import { useQuery } from 'react-query';
 import { useSelector } from 'react-redux';
 import { orange } from '@ant-design/colors';
 import { Color } from '@signozhq/design-tokens';
-import { Button, Collapse, Input, Select, Tag, Typography } from 'antd';
-import { Switch } from '@signozhq/ui';
+import { Button, Collapse, Input, Select, Tag } from 'antd';
+import { Typography, Switch } from '@signozhq/ui';
 import dashboardVariablesQuery from 'api/dashboard/variables/dashboardVariablesQuery';
 import cx from 'classnames';
 import Editor from 'components/Editor';
@@ -486,7 +486,7 @@ function VariableItem({
 								}}
 							/>
 							<div>
-								<Typography.Text type="warning">{errorNameMessage}</Typography.Text>
+								<Typography.Text color="warning">{errorNameMessage}</Typography.Text>
 							</div>
 						</div>
 					</VariableItemRow>

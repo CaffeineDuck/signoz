@@ -1,7 +1,7 @@
 import {
 	TableColumnGroupType as ColumnGroupType,
 	TableColumnType as ColumnType,
-} from 'antd/';
+} from 'antd';
 import {
 	HistoryData,
 	PipelineData,

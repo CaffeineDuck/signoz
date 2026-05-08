@@ -1,6 +1,6 @@
 import { Dispatch, SetStateAction, useEffect, useState } from 'react';
-import { Select, Typography } from 'antd';
-import { Switch } from '@signozhq/ui';
+import { Select } from 'antd';
+import { Typography, Switch } from '@signozhq/ui';
 import TimePreference from 'components/TimePreferenceDropDown';
 import { PANEL_TYPES } from 'constants/queryBuilder';
 import {

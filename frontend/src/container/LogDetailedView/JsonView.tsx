@@ -1,8 +1,7 @@
 import { useMemo, useState } from 'react';
 import MEditor, { EditorProps, Monaco } from '@monaco-editor/react';
 import { Color } from '@signozhq/design-tokens';
-import { Typography } from 'antd';
-import { Switch } from '@signozhq/ui';
+import { Typography, Switch } from '@signozhq/ui';
 import { useIsDarkMode } from 'hooks/useDarkMode';
 
 import { JSONViewProps } from './LogDetailedView.types';
