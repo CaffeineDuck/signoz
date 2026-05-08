@@ -5,6 +5,7 @@ import type { MenuProps } from 'antd';
 import { Dropdown } from 'antd';
 import { useListServiceAccounts } from 'api/generated/services/serviceaccount';
 import CreateServiceAccountModal from 'components/CreateServiceAccountModal/CreateServiceAccountModal';
+import { NoAuthGuard } from 'components/NoAuthGuard';
 import ErrorInPlace from 'components/ErrorInPlace/ErrorInPlace';
 import ServiceAccountDrawer from 'components/ServiceAccountDrawer/ServiceAccountDrawer';
 import ServiceAccountsTable, {
@@ -238,16 +239,18 @@ function ServiceAccountsSettings(): JSX.Element {
 						/>
 					</div>
 
-					<Button
-						variant="solid"
-						color="primary"
-						onClick={async (): Promise<void> => {
-							await setIsCreateModalOpen(true);
-						}}
-					>
-						<Plus size={12} />
-						New Service Account
-					</Button>
+					<NoAuthGuard>
+						<Button
+							variant="solid"
+							color="primary"
+							onClick={async (): Promise<void> => {
+								await setIsCreateModalOpen(true);
+							}}
+						>
+							<Plus size={12} />
+							New Service Account
+						</Button>
+					</NoAuthGuard>
 				</div>
 			</div>
 

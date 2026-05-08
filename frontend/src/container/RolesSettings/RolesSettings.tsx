@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Plus } from '@signozhq/icons';
 import { Button, Input } from '@signozhq/ui';
+import { NoAuthGuard } from 'components/NoAuthGuard';
 
 import { IS_ROLE_DETAILS_AND_CRUD_ENABLED } from './config';
 import CreateRoleModal from './RolesComponents/CreateRoleModal';
@@ -29,15 +30,17 @@ function RolesSettings(): JSX.Element {
 						onChange={(e): void => setSearchQuery(e.target.value)}
 					/>
 					{IS_ROLE_DETAILS_AND_CRUD_ENABLED && (
-						<Button
-							variant="solid"
-							color="primary"
-							className="role-settings-toolbar-button"
-							onClick={(): void => setIsCreateModalOpen(true)}
-						>
-							<Plus size={14} />
-							Custom role
-						</Button>
+						<NoAuthGuard>
+							<Button
+								variant="solid"
+								color="primary"
+								className="role-settings-toolbar-button"
+								onClick={(): void => setIsCreateModalOpen(true)}
+							>
+								<Plus size={14} />
+								Custom role
+							</Button>
+						</NoAuthGuard>
 					)}
 				</div>
 				<RolesListingTable searchQuery={searchQuery} />
