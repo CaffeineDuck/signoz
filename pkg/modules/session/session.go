@@ -6,6 +6,7 @@ import (
 	"net/url"
 	"time"
 
+	"github.com/SigNoz/signoz/pkg/identn"
 	"github.com/SigNoz/signoz/pkg/types/authtypes"
 	"github.com/SigNoz/signoz/pkg/valuer"
 )
@@ -20,6 +21,12 @@ type Module interface {
 	// Create a session for a user using callback authn providers.
 	CreateCallbackAuthNSession(ctx context.Context, authNProvider authtypes.AuthNProvider, values url.Values) (string, error)
 
+	// Create a session for a user identified by the trusted-header IdentN. The
+	// request must carry the headers the IdentN expects (e.g. X-Authentik-Email);
+	// the IdentN is what authenticates — this method only translates the resolved
+	// identity into a tokenizer-issued JWT.
+	CreateTrustedHeaderAuthNSession(ctx context.Context, req *http.Request) (*authtypes.Token, error)
+
 	// Rotate a token.
 	RotateSession(ctx context.Context, accessToken string, refreshToken string) (*authtypes.Token, error)
 
@@ -28,6 +35,13 @@ type Module interface {
 
 	// Get the rotation interval for the session.
 	GetRotationInterval(ctx context.Context) time.Duration
+
+	// SetIdentNResolver wires the IdentN resolver into the session module. It is
+	// a bootstrap-time hook: the resolver depends on the user setter which is in
+	// turn owned by the modules container, so the resolver cannot be passed at
+	// construction time. Call this exactly once after both the modules and the
+	// resolver have been built.
+	SetIdentNResolver(resolver identn.IdentNResolver)
 }
 
 type Handler interface {
@@ -45,6 +59,9 @@ type Handler interface {
 
 	// Create a session for a user using oidc callback.
 	CreateSessionByOIDCCallback(http.ResponseWriter, *http.Request)
+
+	// Create a session for a user identified by the trusted-header IdentN.
+	CreateSessionByTrustedHeader(http.ResponseWriter, *http.Request)
 
 	// Rotate a token.
 	RotateSession(http.ResponseWriter, *http.Request)

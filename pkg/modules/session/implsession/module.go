@@ -3,6 +3,7 @@ package implsession
 import (
 	"context"
 	"log/slog"
+	"net/http"
 	"net/url"
 	"slices"
 	"strings"
@@ -11,6 +12,7 @@ import (
 	"github.com/SigNoz/signoz/pkg/authn"
 	"github.com/SigNoz/signoz/pkg/errors"
 	"github.com/SigNoz/signoz/pkg/factory"
+	"github.com/SigNoz/signoz/pkg/identn"
 	"github.com/SigNoz/signoz/pkg/modules/authdomain"
 	"github.com/SigNoz/signoz/pkg/modules/organization"
 	"github.com/SigNoz/signoz/pkg/modules/session"
@@ -21,14 +23,20 @@ import (
 	"github.com/SigNoz/signoz/pkg/valuer"
 )
 
+var (
+	ErrCodeTrustedHeaderResolverUnset = errors.MustNewCode("trusted_header_resolver_unset")
+	ErrCodeTrustedHeaderNotPresent    = errors.MustNewCode("trusted_header_not_present")
+)
+
 type module struct {
-	settings   factory.ScopedProviderSettings
-	authNs     map[authtypes.AuthNProvider]authn.AuthN
-	userSetter user.Setter
-	userGetter user.Getter
-	authDomain authdomain.Module
-	tokenizer  tokenizer.Tokenizer
-	orgGetter  organization.Getter
+	settings       factory.ScopedProviderSettings
+	authNs         map[authtypes.AuthNProvider]authn.AuthN
+	userSetter     user.Setter
+	userGetter     user.Getter
+	authDomain     authdomain.Module
+	tokenizer      tokenizer.Tokenizer
+	orgGetter      organization.Getter
+	identNResolver identn.IdentNResolver
 }
 
 func NewModule(providerSettings factory.ProviderSettings, authNs map[authtypes.AuthNProvider]authn.AuthN, userSetter user.Setter, userGetter user.Getter, authDomain authdomain.Module, tokenizer tokenizer.Tokenizer, orgGetter organization.Getter) session.Module {
@@ -41,6 +49,12 @@ func NewModule(providerSettings factory.ProviderSettings, authNs map[authtypes.A
 		tokenizer:  tokenizer,
 		orgGetter:  orgGetter,
 	}
+}
+
+// SetIdentNResolver installs the IdentN resolver. See the interface comment for
+// why this is a setter rather than a constructor parameter.
+func (module *module) SetIdentNResolver(resolver identn.IdentNResolver) {
+	module.identNResolver = resolver
 }
 
 func (module *module) GetSessionContext(ctx context.Context, email valuer.Email, siteURL *url.URL) (*authtypes.SessionContext, error) {
@@ -123,6 +137,45 @@ func (module *module) CreatePasswordAuthNSession(ctx context.Context, authNProvi
 	}
 
 	return module.tokenizer.CreateToken(ctx, identity, map[string]string{})
+}
+
+// CreateTrustedHeaderAuthNSession trades a trusted-header-authenticated request
+// for a tokenizer-issued JWT. The IdentN itself is the authoritative source of
+// authentication — this method only converts that resolution into a session
+// token in the same shape the password/callback flows return.
+//
+// Errors:
+//   - trusted_header_resolver_unset  : resolver has not been wired (bootstrap bug)
+//   - trusted_header_not_present     : the matched IdentN is not the trusted-header one,
+//                                      or no IdentN matched at all
+//   - errors from the IdentN itself  : user-not-found, multi-org, deleted, root, etc.
+func (module *module) CreateTrustedHeaderAuthNSession(ctx context.Context, req *http.Request) (*authtypes.Token, error) {
+	if module.identNResolver == nil {
+		return nil, errors.New(errors.TypeInternal, ErrCodeTrustedHeaderResolverUnset, "trusted-header session bridge is not wired; identN resolver is nil")
+	}
+
+	idn := module.identNResolver.GetIdentN(req)
+	if idn == nil || idn.Name() != authtypes.IdentNProviderTrustedHeader {
+		return nil, errors.New(errors.TypeUnauthenticated, ErrCodeTrustedHeaderNotPresent, "trusted-header IdentN did not match the request")
+	}
+
+	identity, err := idn.GetIdentity(req)
+	if err != nil {
+		return nil, err
+	}
+
+	// Re-wrap the identity with IdentNProviderTokenizer so the resulting JWT
+	// reports itself as a tokenizer-issued token — matching the password and
+	// callback flows. The trusted-header tag on the source identity is just an
+	// audit-time annotation; the JWT itself is a regular session token.
+	tokenIdentity := authtypes.NewPrincipalUserIdentity(
+		identity.UserID,
+		identity.OrgID,
+		identity.Email,
+		authtypes.IdentNProviderTokenizer,
+	)
+
+	return module.tokenizer.CreateToken(ctx, tokenIdentity, map[string]string{})
 }
 
 func (module *module) CreateCallbackAuthNSession(ctx context.Context, authNProvider authtypes.AuthNProvider, values url.Values) (string, error) {

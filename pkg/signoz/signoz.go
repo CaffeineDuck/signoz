@@ -456,6 +456,13 @@ func New(
 		return nil, err
 	}
 
+	// Wire the resolver into the session module so the trusted-header session
+	// bridge endpoint can resolve identities at request time. The setter pattern
+	// exists because the resolver depends on modules.UserSetter, which is owned
+	// by the modules container and therefore cannot be available at module
+	// construction time.
+	modules.Session.SetIdentNResolver(identNResolver)
+
 	userService := impluser.NewService(providerSettings, impluser.NewStore(sqlstore, providerSettings), modules.UserGetter, modules.UserSetter, orgGetter, authz, config.User.Root)
 
 	// Initialize the querier handler via callback (allows EE to decorate with anomaly detection)

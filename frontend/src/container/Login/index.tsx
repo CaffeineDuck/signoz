@@ -6,6 +6,7 @@ import { Typography } from '@signozhq/ui/typography';
 import getVersion from 'api/v1/version/get';
 import get from 'api/v2/sessions/context/get';
 import post from 'api/v2/sessions/email_password/post';
+import postTrustedHeader from 'api/v2/sessions/trustedheader/post';
 import afterLogin from 'AppRoutes/utils';
 import AuthError from 'components/AuthError/AuthError';
 import ROUTES from 'constants/routes';
@@ -93,6 +94,34 @@ function Login(): JSX.Element {
 			history.push(ROUTES.SIGN_UP);
 		}
 	}, [versionData, versionLoading, versionError]);
+
+	// Opportunistic trusted-header auto-login: if the request reaches the SPA
+	// with identity headers injected by an upstream proxy (e.g. Authentik
+	// forward-auth), trade those headers for a JWT and skip the email form
+	// entirely. Any failure (401, 404, network) is swallowed silently — this
+	// path is opt-in on the server side, and the regular email form remains
+	// the universal fallback. Runs exactly once on mount.
+	useEffect(() => {
+		let cancelled = false;
+		void (async (): Promise<void> => {
+			try {
+				const response = await postTrustedHeader();
+				if (cancelled || !response?.data?.accessToken) {
+					return;
+				}
+				afterLogin(response.data.accessToken, response.data.refreshToken);
+				history.push(ROUTES.HOME);
+			} catch {
+				// Swallow — trusted-header auto-login is best-effort. The user will
+				// see the regular login form.
+			}
+		})();
+		return (): void => {
+			cancelled = true;
+		};
+		// Intentionally empty deps — this should run exactly once on mount.
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, []);
 
 	// fetch the sessions context post user entering the email
 	const onNextHandler = async (): Promise<void> => {

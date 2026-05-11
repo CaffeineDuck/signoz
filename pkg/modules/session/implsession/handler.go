@@ -66,6 +66,19 @@ func (handler *handler) CreateSessionByEmailPassword(rw http.ResponseWriter, req
 	render.Success(rw, http.StatusOK, authtypes.NewGettableTokenFromToken(token, handler.module.GetRotationInterval(ctx)))
 }
 
+func (handler *handler) CreateSessionByTrustedHeader(rw http.ResponseWriter, req *http.Request) {
+	ctx, cancel := context.WithTimeout(req.Context(), 15*time.Second)
+	defer cancel()
+
+	token, err := handler.module.CreateTrustedHeaderAuthNSession(ctx, req)
+	if err != nil {
+		render.Error(rw, err)
+		return
+	}
+
+	render.Success(rw, http.StatusOK, authtypes.NewGettableTokenFromToken(token, handler.module.GetRotationInterval(ctx)))
+}
+
 func (handler *handler) CreateSessionByGoogleCallback(rw http.ResponseWriter, req *http.Request) {
 	ctx, cancel := context.WithTimeout(req.Context(), 15*time.Second)
 	defer cancel()

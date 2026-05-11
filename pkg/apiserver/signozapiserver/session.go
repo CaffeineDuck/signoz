@@ -26,6 +26,23 @@ func (provider *provider) addSessionRoutes(router *mux.Router) error {
 		return err
 	}
 
+	if err := router.Handle("/api/v2/sessions/trustedheader", handler.New(provider.authzMiddleware.OpenAccess(provider.sessionHandler.CreateSessionByTrustedHeader), handler.OpenAPIDef{
+		ID:                  "CreateSessionByTrustedHeader",
+		Tags:                []string{"sessions"},
+		Summary:             "Create session by trusted header",
+		Description:         "This endpoint creates a session for a user identified by the trusted-header IdentN. Authentication is performed by the IdentN using request headers (e.g. X-Authentik-Email); the request body is empty.",
+		Request:             nil,
+		RequestContentType:  "",
+		Response:            new(authtypes.GettableToken),
+		ResponseContentType: "application/json",
+		SuccessStatusCode:   http.StatusOK,
+		ErrorStatusCodes:    []int{http.StatusBadRequest, http.StatusUnauthorized},
+		Deprecated:          false,
+		SecuritySchemes:     []handler.OpenAPISecurityScheme{},
+	})).Methods(http.MethodPost).GetError(); err != nil {
+		return err
+	}
+
 	if err := router.Handle("/api/v2/sessions/context", handler.New(provider.authzMiddleware.OpenAccess(provider.sessionHandler.GetSessionContext), handler.OpenAPIDef{
 		ID:                  "GetSessionContext",
 		Tags:                []string{"sessions"},
